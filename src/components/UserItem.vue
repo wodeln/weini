@@ -1,0 +1,105 @@
+<template>
+  <div
+    class="m-box m-aln-center m-main user-item"
+    @click="toUserHome">
+    <avatar :user="user" />
+    <section
+      class="m-box-model m-flex-grow1 m-flex-shrink1 m-flex-base0 m-text-cut user-item-body">
+      <h2 class="m-text-box m-text-cut">{{ user.name }}</h2>
+      <p class="m-text-box m-text-cut">{{ user.bio || "这家伙很懒，什么也没留下" }}</p>
+    </section>
+    <svg
+      v-if="!isMine"
+      class="m-style-svg m-svg-def"
+      @click.stop="followUser">
+      <use
+        :xlink:href="`#base-${isFollow}`"
+        xmlns:xlink="http://www.w3.org/1999/xlink"/>
+    </svg>
+  </div>
+</template>
+<script>
+import { followUserByStatus } from "@/api/user.js";
+export default {
+  name: "UserItem",
+  props: {
+    user: { type: Object, required: true },
+    link: { type: Boolean, default: true }
+  },
+  data() {
+    return {
+      loading: false
+    };
+  },
+  computed: {
+    follower: {
+      get() {
+        return this.user.follower;
+      },
+      set(val) {
+        this.user.follower = val;
+      }
+    },
+    isFollow: {
+      get() {
+        const following = this.user.following;
+        return this.follower && following
+          ? "eachFollow"
+          : this.follower
+            ? "follow"
+            : "unFollow";
+      },
+      set(val) {
+        this.follower = val;
+      }
+    },
+    isMine() {
+      return this.$store.state.CURRENTUSER.id === this.user.id;
+    }
+  },
+  created() {
+    this.$store.commit("SAVE_USER", this.user);
+  },
+  methods: {
+    toUserHome() {
+      this.link && this.$router.push(`/users/${this.user.id}`);
+    },
+    followUser() {
+      if (this.loading) return;
+      this.loading = true;
+      followUserByStatus({
+        id: this.user.id,
+        status: this.isFollow
+      }).then(follower => {
+        this.user.follower = follower;
+        this.loading = false;
+      });
+    }
+  }
+};
+</script>
+<style lang='less'>
+.user-item {
+  padding: 30px 20px;
+  & + & {
+    border-top: 1px solid #ededed; /*no*/
+  }
+  .user-item-body {
+    margin-left: 30px;
+    margin-right: 30px;
+    h2 {
+      margin: 9px 0;
+      font-size: 32px;
+    }
+    p {
+      margin: 9px 0;
+      font-size: 28px;
+      color: @text-color3;
+    }
+  }
+  .m-svg-def {
+    width: 42px;
+    height: 42px;
+  }
+}
+</style>
